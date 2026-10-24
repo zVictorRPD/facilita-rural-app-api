@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique
+  name              String
+  emailVerified     Boolean             @default(false)
+  password          String
+  avatar            String
+  hasCurriculum     Boolean             @default(false)
+  timetable         String?
+  createdAt         DateTime?           @default(now())
+  recoverPassword   RecoverPassword[]
+  calendarEvents    CalendarEvents[]
+  curriculum        Curriculum[]
+  userSubjects      UserSubjects[]
+  userComplementary UserComplementary[]
+  Rating            Rating[]
+  refreshTokens     RefreshToken[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerification {
+  id        Int      @id @default(autoincrement())
+  email     String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model RecoverPassword {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  user      User     @relation(fields: [userEmail], references: [email])
+  userEmail String
+  createdAt DateTime @default(now())
+}
+
+model Teacher {
+  id               Int            @id
+  avatar           String
+  name             String
+  departament_code String
+  departament_name String
+  email            String
+  lattes           String
+  userSubjects     UserSubjects[]
+}
+
+model Course {
+  code                                    String       @id
+  name                                    String
+  period_emergence                        String
+  workload_total                          Int
+  workload_normal_lessons                 Int
+  workload_academic_professional_guidance Int
+  workload_optional_lessons               Int
+  workload_complementary                  Int
+  periods                                 Period[]
+  Curriculum                              Curriculum[]
+}
+
+model Period {
+  id         Int                 @id @default(autoincrement())
+  name       String
+  course     Course              @relation(fields: [courseCode], references: [code])
+  courseCode String
+  subjects   SubjectsOnPeriods[]
+}
+
+model Subject {
+  code          String              @id
+  name          String
+  time          Int
+  periods       SubjectsOnPeriods[]
+  usersSubjects UserSubjects[]
+  Rating        Rating[]
+}
+
+model SubjectsOnPeriods {
+  subject     Subject @relation(fields: [subjectCode], references: [code])
+  subjectCode String
+  period      Period  @relation(fields: [periodId], references: [id])
+  periodId    Int
+
+  @@id([subjectCode, periodId])
+}
+
+model CalendarEvents {
+  id          Int       @id @default(autoincrement())
+  title       String
+  start       DateTime
+  end         DateTime
+  description String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime? @default(now())
+}
+
+model Curriculum {
+  id                     Int                 @id @default(autoincrement())
+  user                   User                @relation(fields: [userId], references: [id])
+  userId                 Int                 @unique
+  course                 Course              @relation(fields: [courseCode], references: [code])
+  courseCode             String
+  curriculumPeriods      CurriculumPeriods[]
+  curriculumPeriodsOrder String?
+  subjectsFilter         String?
+  createdAt              DateTime?           @default(now())
+}
+
+model CurriculumPeriods {
+  id            Int            @id @default(autoincrement())
+  curriculum    Curriculum     @relation(fields: [curriculumId], references: [id])
+  curriculumId  Int
+  name          String
+  visible       Boolean        @default(true)
+  subjects      UserSubjects[]
+  subjectsOrder String?
+  createdAt     DateTime?      @default(now())
+
+  @@index([curriculumId])
+}
+
+model UserSubjects {
+  id          Int               @id @default(autoincrement())
+  subject     Subject           @relation(fields: [subjectCode], references: [code])
+  subjectCode String
+  status      String            @default("todo")
+  isOptional  Boolean           @default(false)
+  note        String?
+  links       String?
+  grade       Float?
+  teacher     Teacher?          @relation(fields: [teacherId], references: [id])
+  teacherId   Int?
+  period      CurriculumPeriods @relation(fields: [periodId], references: [id])
+  periodId    Int
+  user        User              @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime?         @default(now())
+
+  @@index([periodId])
+}
+
+model UserComplementary {
+  id        Int       @id @default(autoincrement())
+  name      String
+  time      Int
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime? @default(now())
+}
+
+model Rating {
+  id          Int       @id @default(autoincrement())
+  complexity  Float
+  relevance   Float
+  comment     String?
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  subject     Subject   @relation(fields: [subjectCode], references: [code])
+  subjectCode String
+  createdAt   DateTime? @default(now())
+}
