@@ -1,5 +1,8 @@
 import "dotenv/config";
-import { handle } from "@hono/vercel";
 import { app } from "../src/app.js";
 
-export default handle(app);
+export default {
+  fetch(request: Request) {
+    return app.fetch(request);
+  },
+};
