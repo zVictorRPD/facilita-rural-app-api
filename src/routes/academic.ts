@@ -546,12 +546,18 @@ academic.get("/dashboard", async (c) => {
 
 academic.get("/subjects", async (c) => {
   const page = Math.max(1, Number(c.req.query("page") ?? 1));
-  const code = c.req.query("code") ?? "";
-  const name = c.req.query("name") ?? "";
+  const code = (c.req.query("code") ?? "").trim();
+  const name = (c.req.query("name") ?? "").trim();
   const time = Number(c.req.query("time") ?? 0);
+  const text =
+    code && name
+      ? { OR: [{ code: { contains: code } }, { name: { contains: name } }] }
+      : {
+          ...(code ? { code: { contains: code } } : {}),
+          ...(name ? { name: { contains: name } } : {}),
+        };
   const where = {
-    ...(code ? { code: { contains: code } } : {}),
-    ...(name ? { name: { contains: name } } : {}),
+    ...text,
     ...(time > 0 ? { time } : {}),
   };
   const take = 20;
